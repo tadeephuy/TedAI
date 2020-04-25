@@ -1,0 +1,2 @@
+# TedAI
+FastAI reimplementation
