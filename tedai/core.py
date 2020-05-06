@@ -17,7 +17,7 @@ from matplotlib import pyplot as plt
 from IPython.display import display, HTML, clear_output
 from fastprogress.fastprogress import master_bar, progress_bar
 
-from tedai.utils import *
+from .utils import *
 ################ DATASET ################
 class TedImageDataset(Dataset):
     def __init__(self, data_path, df, transforms=None, img_size=224, label_cols_list=None):
@@ -127,6 +127,7 @@ class TedData:
         self.val_ds = self._create_ds(self.ds_class[1], transforms=self.transforms[1], img_size=self.img_size, fix_dis=self.fix_dis)
         self.train_dl = self._create_dl(self.train_ds, shuffle=True)
         self.val_dl = self._create_dl(self.val_ds, shuffle=False)
+        self.test_ds = None
         if len(self.ds_class) == 3:
             self.add_test(test_ds=self.ds_class[2])
         else:
@@ -578,6 +579,7 @@ class TedLearner:
         print(f'Model is loaded from {model_path}')
 
     def freeze_base(self):
+        self.unfreeze()
         for layer in self.model.base.modules():
             if isinstance(layer , (nn.BatchNorm2d, nn.BatchNorm1d)):
                 for p in layer.parameters(): p.requires_grad = True
@@ -585,6 +587,7 @@ class TedLearner:
                 for p in layer.parameters(): p.requires_grad = False
 
     def freeze_head(self):
+        self.unfreeze()
         for layer in self.model.head.modules():
             if isinstance(layer , (nn.BatchNorm2d, nn.BatchNorm1d)):
                 for p in layer.parameters(): p.requires_grad = True

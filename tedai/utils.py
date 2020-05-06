@@ -6,8 +6,8 @@ import pandas as pd
 from matplotlib import pyplot as plt
 from functools import partial
 import numpy as np
-from tedai import *
-from tedai.metrics import *
+from . import *
+from .metrics import *
 
 class AverageMeter:
     """Computes and stores the average and current value"""
@@ -54,22 +54,21 @@ def create_transforms(zoom_in_scale=1.3, max_rotate=12, vert_flip=False, normali
     """
     create basic transforms for training data
     """
-    Identity = Lambda(lambda x: x)
+    def Identity(x): return x
 
-    transforms = lambda img_size: Compose([
+    return lambda img_size: Compose([
         ToPILImage(),
         Resize(int(img_size*zoom_in_scale)),
         RandomResizedCrop(img_size, (0.8, 1.25)),
         RandomHorizontalFlip(p=p_flip),
-        RandomVerticalFlip(p=p_flip) if vert_flip else Identity(),
+        RandomVerticalFlip(p=p_flip) if vert_flip else Lambda(Identity),
         RandomApply([RandomAffine(max_rotate, (0.05, 0.05), (0.95, 1.25), 
                     (0.2, 0.2, 0.2, 0.2), 2)], p=p_affine),
         RandomApply([ColorJitter(brightness=(0.2), contrast=(0.85, 1.0))], p=p_color),
         RandomPerspective(0.05, p=0.2),
         ToTensor(),
-        Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]) if normalize else Identity()
+        Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]) if normalize else Lambda(Identity)
     ])
-    return transforms
 
 def report_distribution(df, label_cols_list):
     distribution_report = {}
@@ -93,23 +92,37 @@ def report_binary_thresholded_metrics(y_pred, y_true, thresh_step=0.1):
     return report
 
 def report_wrong_samples(y_pred, y_true, df, loss=None, top_k=None, full=False, thresh=None):
+    """
+    `loss` must be not None to use top_k
+    """
     assert len(y_true) == len(y_pred)
     y_pred_org = y_pred.copy()
     y_true = y_true.astype(np.uint8)
+    losses = np.full(len(y_true), fill_value=None) if loss is None else loss
     if thresh is not None: 
         y_pred = (y_pred >= thresh).astype(np.uint8)
         wrong_idxes = [idx for idx, pred in enumerate(y_pred) if y_true[idx] != pred]
     else:
         wrong_idxes = range(len(y_pred))
     report = df.copy(deep=True)
+    report = report[['Images']]
     report['preds'] = y_pred_org
     report['label'] = y_true
     if not full:
         report = report.filter(wrong_idxes, axis='index')
-        loss = loss[wrong_idxes]
+        losses = losses[wrong_idxes]
     if loss is not None:
-        report['losses'] = loss
+        report['losses'] = losses
     if top_k is None:
         return report
+    assert loss is not None, 'No loss to sort top K'
     report = report.sort_values(by='losses', ascending=False)
     return report[:top_k]
+
+def read_csv(path, normalize_columns=True, thresh=0.5, **kwargs):
+    df = pd.read_csv(path, **kwargs)
+    if normalize_columns:
+        df.columns = [c.replace(' ', '_') for c in df.columns]
+    if thresh is not None:
+        df[df.columns[1:]] = (df[df.columns[1:]].values >= thresh).astype(np.uint8) 
+    return df
