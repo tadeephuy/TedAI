@@ -70,12 +70,14 @@ def create_transforms(zoom_in_scale=1.3, max_rotate=12, vert_flip=False, normali
         Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]) if normalize else Lambda(Identity)
     ])
 
-def report_distribution(df, label_cols_list):
+def report_distribution(df, label_cols_list, sort=True):
     distribution_report = {}
     for c in label_cols_list:
         distribution_report[c] = df[c].value_counts()
     distribution_report = pd.DataFrame.from_dict(distribution_report, orient='index').fillna(0)
     distribution_report.columns = [f'{c:0.2f}' for c in list(distribution_report.columns)]
+    if sort:
+        distribution_report = distribution_report.reindex(sorted(distribution_report.columns), axis=1)
     return distribution_report.applymap(int)
 
 def report_binary_thresholded_metrics(y_pred, y_true, thresh_step=0.1):
