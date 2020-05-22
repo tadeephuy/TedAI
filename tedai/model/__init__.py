@@ -24,10 +24,6 @@ class TedModel(nn.Module):
         super(TedModel, self).__init__()
         self.base = arch
         self.head = self.create_head(hidden_size, num_classes) if head is None else head
-        
-        for m in self.modules():
-            if isinstance(m, nn.Conv2d): nn.init.kaiming_normal_(m.weight, mode='fan_in')
-            elif isinstance(m, nn.Linear): nn.init.xavier_normal_(m.weight)
 
     def forward(self, x): return self.head(self.base(x))
 

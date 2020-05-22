@@ -59,7 +59,7 @@ def create_transforms(zoom_in_scale=1.3, max_rotate=12, vert_flip=False, normali
     return lambda img_size: Compose([
         ToPILImage(),
         Resize(int(img_size*zoom_in_scale)),
-        RandomResizedCrop(img_size, (0.8, 1.25)),
+        RandomResizedCrop(img_size, (0.9, 1.15)),
         RandomHorizontalFlip(p=p_flip),
         RandomVerticalFlip(p=p_flip) if vert_flip else Lambda(Identity),
         RandomApply([RandomAffine(max_rotate, (0.05, 0.05), (0.95, 1.25), 
