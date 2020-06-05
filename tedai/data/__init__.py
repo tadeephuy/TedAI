@@ -65,7 +65,7 @@ class TedData:
         self.test_ds = self._create_ds(test_ds, transforms=self.transforms[1], img_size=self.img_size, fix_dis=self.fix_dis)
         self.test_dl = self._create_dl(self.test_ds, shuffle=False)
 
-    def show_batch(self, n_row=8, n_col=1, mode='train'):
+    def show_batch(self, n_row=1, n_col=8, mode='train'):
         """
         function to show images batch that is fed for training
         
@@ -75,16 +75,16 @@ class TedData:
             mode: `train` or `valid` to specify the img from each session
         """
         n_row = self.bs if n_row >= self.bs else n_row
-        dl = {
-            'train': self.train_dl, 
-            'valid': self.val_dl, 
-            'test': self.test_dl or self.val_dl
-        }.get(mode, self.train_dl)
-        
-        it = iter(dl)
-        for _ in range(n_col):
-            xb, _ = it.next()
-            make_imgs(xb, n_row=n_row, plot=True)
+        ds = {
+            'train': self.train_ds, 
+            'valid': self.val_ds, 
+            'test': self.test_ds or self.val_ds
+        }.get(mode, self.train_ds)
+
+        for _ in range(n_row):
+            idx = np.random.randint(len(ds), size=n_col)
+            xb = torch.stack([ds[i][0] for i in idx], dim=0)
+            make_imgs(xb, n_row=n_col, plot=True)
 
 class TedImageDataset(Dataset):
     def __init__(self, data_path, df, transforms=None, img_size=224, label_cols_list=None):
