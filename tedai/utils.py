@@ -128,3 +128,7 @@ def read_csv(path, normalize_columns=True, thresh=0.5, **kwargs):
     if thresh is not None:
         df[df.columns[1:]] = (df[df.columns[1:]].values >= thresh).astype(np.uint8) 
     return df
+
+def count_params(model, trainable=False):
+    if trainable: return sum(p.numel() for p in model.parameters() if p.requires_grad)
+    return sum(p.numel() for p in model.parameters())
