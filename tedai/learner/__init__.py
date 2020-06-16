@@ -101,6 +101,9 @@ class TedLearner:
                 train_loss = train_loss_value.avg
                 self.recorder.update(train_loss=train_loss, lr=last_lr, validate_every=self.validate_every)
                 ## on batch end
+ 
+            # save model and optimizer states
+            self.save(name=name)
 
             # validation
             ## on validation begin
