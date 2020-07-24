@@ -4,7 +4,7 @@ class BasicHead(nn.Module):
     def __init__(self, in_features, hidden_size):
         super(BasicHead, self).__init__()
         self.avgpool = nn.AdaptiveAvgPool2d(1)
-        self.maxpool = nn.AdaptiveAvgPool2d(1)
+        self.maxpool = nn.AdaptiveMaxPool2d(1)
         self.flatten = nn.Flatten()
         self.fc = nn.Sequential(nn.BatchNorm1d(in_features*2), nn.Dropout(0.25), 
                                 nn.Linear(in_features*2, in_features), nn.LeakyReLU(),

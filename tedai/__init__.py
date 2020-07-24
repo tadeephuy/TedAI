@@ -7,3 +7,4 @@ from .data import *
 from .model import *
 from .recorder import *
 from .learner import *
+from .model import archs
