@@ -34,6 +34,7 @@ class TedRecorder:
         self.master_bar = None
     
     def update(self, train_loss, lr, validate_every=None):
+        self.learner.train_bar.comment = f'train_loss: {train_loss:0.6f}'
         if validate_every is None:
             self._update(train_loss=train_loss, lr=lr, done_epoch=False); return
 
