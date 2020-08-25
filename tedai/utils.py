@@ -167,7 +167,16 @@ def read_csv(path, normalize_columns=True, thresh=0.5, **kwargs):
     if normalize_columns:
         df.columns = [c.replace(' ', '_') for c in df.columns]
     if thresh is not None:
-        df[df.columns[1:]] = (df[df.columns[1:]].values >= thresh).astype(np.uint8) 
+        def fix_str(x):
+            if isinstance(x, str):
+                if all([(c.isdigit() or c=='.') for c in x]):
+                    return float(x)
+                return 0.0
+            elif isinstance(x, (int, float)):
+                return float(x)
+            return 0.0
+        df[df.columns[1:]] = df[df.columns[1:]].applymap(fix_str)
+        df[df.columns[1:]] = (df[df.columns[1:]].values.astype(np.uint8)  >= thresh).astype(np.uint8) 
     return df
 
 def count_params(model, trainable=False):
