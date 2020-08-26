@@ -88,8 +88,8 @@ def make_imgs(xb, n_row=8, denorm=Denormalize(), device=torch.device('cpu'), plo
         return ToPILImage()((grid_img.numpy()*255).astype(np.uint8))
     plt.close(); plt.figure(figsize=(30,30)); plt.imshow(grid_img); plt.show()
 
-def create_dataset(dataset_class, data_path, df, **kwargs):
-    return partial(dataset_class, data_path=data_path, df=df, **kwargs)
+def create_dataset(dataset_class, df, **kwargs):
+    return partial(dataset_class, df=df, **kwargs)
 
 def create_transforms(zoom_in_scale=1.3, max_rotate=12, vert_flip=False, normalize=True, p_flip=0.4, p_affine=0.45, p_color=0.2):
     """
