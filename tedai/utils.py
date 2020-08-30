@@ -182,3 +182,21 @@ def read_csv(path, normalize_columns=True, thresh=0.5, **kwargs):
 def count_params(model, trainable=False):
     if trainable: return sum(p.numel() for p in model.parameters() if p.requires_grad)
     return sum(p.numel() for p in model.parameters())
+
+def resize_aspect_ratio(img, size, interp=cv2.INTER_AREA):
+    """
+    resize min edge to target size, keeping aspect ratio
+    """
+    if len(img.shape) == 2:
+        h,w = img.shape
+    elif len(img.shape) == 3:
+        h,w,_ = img.shape
+    else:
+        return None
+    if h > w:
+        new_w = size
+        new_h = h*new_w//w
+    else:
+        new_h = size
+        new_w = w*new_h//h
+    return cv2.resize(img, (new_w, new_h), interpolation=interp)     
