@@ -96,11 +96,10 @@ def create_transforms(zoom_in_scale=1.3, max_rotate=12, vert_flip=False, normali
     create basic transforms for training data
     """
     def Identity(x): return x
-
+    
     return lambda img_size: Compose([
         ToPILImage(),
-        Resize(int(img_size*zoom_in_scale)),
-        RandomResizedCrop(img_size, (0.9, 1.15)),
+        RandomResizedCrop(img_size, (0.9, zoom_in_scale)),
         RandomHorizontalFlip(p=p_flip),
         RandomVerticalFlip(p=p_flip) if vert_flip else Lambda(Identity),
         RandomApply([RandomAffine(max_rotate, (0.05, 0.05), (0.95, 1.25), 
@@ -108,7 +107,8 @@ def create_transforms(zoom_in_scale=1.3, max_rotate=12, vert_flip=False, normali
         RandomApply([ColorJitter(brightness=(0.2), contrast=(0.85, 1.0))], p=p_color),
         RandomPerspective(0.05, p=0.2),
         ToTensor(),
-        Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]) if normalize else Lambda(Identity)
+        Cutout(10, img_size//15),
+        Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]) if normalize else Lambda(Identity),
     ])
 
 def report_distribution(df, label_cols_list, sort=True):
@@ -121,17 +121,20 @@ def report_distribution(df, label_cols_list, sort=True):
         distribution_report = distribution_report.reindex(sorted(distribution_report.columns), axis=1)
     return distribution_report.applymap(int)
 
-def report_binary_thresholded_metrics(y_pred, y_true, thresh_step=0.1):
+def report_binary_thresholded_metrics(y_pred, y_true, thresh_step=0.1, lite=True):
     report = pd.DataFrame(columns=['precision', 'recall', 'specificity', 
                                    'accuracy', 'auc', 'f2', 'f1', 'TP', 'FP', 'TN', 'FN'])
     preds = y_pred
-    for thresh in np.arange(0.00, 1.00, thresh_step):
+    for thresh in np.arange(thresh_step, 1.00, thresh_step):
         y_pred = (preds >= thresh).astype(np.uint8).squeeze()
         metrics = binary_metrics(y_pred, y_true, log=False)
         counts = classification_counts(y_pred, y_true, log=False)
         row = pd.DataFrame.from_dict({f'{thresh:0.2f}': dict(metrics, **counts)}, orient='index')
         report = pd.concat([report, row], ignore_index=False)
         report.index.name = 'threshold'
+    if lite:
+        report = report[['precision', 'recall', 'specificity', 
+                        'f1', 'TP', 'FP', 'TN', 'FN']]
     return report
 
 def report_wrong_samples(y_pred, y_true, df, loss=None, top_k=None, full=False, thresh=None):
