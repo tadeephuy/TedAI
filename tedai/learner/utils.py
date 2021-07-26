@@ -19,7 +19,10 @@ def get_preds(learn: TedLearner, mode='test', with_losses=False, activ=None):
     dl = learn.data._create_dl(dataset=ds, shuffle=False, bs=None if not with_losses else 1)
     with torch.no_grad():
         for batch in progress_bar(dl):
-            xb = batch[0].to(learn.device)
+            if mode=='test': # no label
+                xb = batch.to(learn.device)
+            else:
+                xb = batch[0].to(learn.device)
             out = learn.model(xb)
             if activ is not None: out = activ(out)
             preds.append(out.cpu().numpy())
