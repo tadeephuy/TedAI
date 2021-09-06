@@ -6,6 +6,7 @@ import pandas as pd
 from matplotlib import pyplot as plt
 from functools import partial
 import numpy as np
+import sklearn.metrics as sk_metrics
 from . import *
 from .metrics import *
 
@@ -125,9 +126,12 @@ def report_binary_thresholded_metrics(y_pred, y_true, thresh_step=0.1, lite=True
     report = pd.DataFrame(columns=['precision', 'recall', 'specificity', 
                                    'accuracy', 'auc', 'f2', 'f1', 'TP', 'FP', 'TN', 'FN'])
     preds = y_pred
+    
+    auc = sk_metrics.roc_auc_score(y_true, y_pred)
     for thresh in np.arange(thresh_step, 1.00, thresh_step):
         y_pred = (preds >= thresh).astype(np.uint8).squeeze()
         metrics = binary_metrics(y_pred, y_true, log=False)
+        metrics['auc'] = auc
         counts = classification_counts(y_pred, y_true, log=False)
         row = pd.DataFrame.from_dict({f'{thresh:0.2f}': dict(metrics, **counts)}, orient='index')
         report = pd.concat([report, row], ignore_index=False)
