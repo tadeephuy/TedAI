@@ -103,7 +103,7 @@ class TedLearner:
                 ## on batch end
  
             # save model and optimizer states
-            self.save(name=name)
+            self.save(name=name, log=False)
 
             # validation
             ## on validation begin
@@ -118,11 +118,12 @@ class TedLearner:
         # save model and optimizer states
         self.save(name=name)
 
-    def save(self, name='model'):
+    def save(self, name='model', log=True):
         model_path = os.path.join(self.model_path, f'{name}.pth')
         torch.save({'model_state_dict': self.model.state_dict(),
                     'optimizer_state_dict': self.opt.state_dict()}, model_path)
-        print(f'Model is saved at {model_path}')
+        if log:
+            print(f'Model is saved at {model_path}')
         
     def load(self, name='model', strict=True):
         model_path = os.path.join(self.model_path, f'{name}.pth')

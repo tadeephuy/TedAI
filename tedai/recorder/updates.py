@@ -50,4 +50,7 @@ def _update_epoch_report(recorder, train_loss, val_loss, metrics, mode='epoch'):
         columns=recorder.epoch_report.columns)
     recorder.epoch_report = recorder.epoch_report.append(row, ignore_index=True)
     recorder.str_stats = [index, f'{train_loss:.6f}', f'{val_loss:.6f}', *[f'{metric_value:.6f}' for _, metric_value in (metrics or {}).items()]]
+    
+    if recorder.model_save:
+        recorder._model_save()
 TedRecorder._update_epoch_report = _update_epoch_report

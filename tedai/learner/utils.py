@@ -37,10 +37,10 @@ def get_preds(learn: TedLearner, mode='test', with_losses=False, activ=None):
     return preds
 TedLearner.get_preds = get_preds
 
-def freeze_base(learn: TedLearner):
+def freeze_base(learn: TedLearner, freeze_bn=False):
     learn.unfreeze()
     for layer in learn.model.base.modules():
-        if isinstance(layer , (nn.BatchNorm2d, nn.BatchNorm1d)):
+        if isinstance(layer , (nn.BatchNorm2d, nn.BatchNorm1d)) and not freeze_bn:
             for p in layer.parameters(): p.requires_grad = True
         else:
             for p in layer.parameters(): p.requires_grad = False
