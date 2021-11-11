@@ -44,7 +44,7 @@ class TedData:
 
         self.train_ds = self._create_ds(self.ds_class[0], transforms=self.transforms[0], img_size=self.img_size)
         self.val_ds = self._create_ds(self.ds_class[1], transforms=self.transforms[1], img_size=self.img_size, fix_dis=self.fix_dis)
-        self.train_dl = self._create_dl(self.train_ds, shuffle=True)
+        self.train_dl = self._create_dl(self.train_ds, shuffle=True, drop_last=True)
         self.val_dl = self._create_dl(self.val_ds, shuffle=False)
         self.test_ds = None
         if len(self.ds_class) == 3:
