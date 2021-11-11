@@ -19,6 +19,8 @@ def config_model_save(recorder: TedRecorder, name='model', mode='reduce', monito
     recorder.model_save = True
     recorder.model_save_mode = mode
     recorder.model_save_name = name
+    
+    recorder.old_monitor_value = None
 
     if mode in ['reduce', 'improve']:
         recorder.model_save_monitor = monitor or 'val_loss'
@@ -33,17 +35,17 @@ TedRecorder.config_model_save = config_model_save
 
 def model_save(recorder: TedRecorder):
     save_funcs = {
-        'reduce': __model_save_reduce,
-        'improve': __model_save_improve,
-        'every_step': __model_save_step,
-        'every_epoch': __model_save_epoch,
+        'reduce':  recorder.__model_save_reduce,
+        'improve': recorder.__model_save_improve,
+        'every_step':  recorder.__model_save_step,
+        'every_epoch':  recorder.__model_save_epoch,
     }
     save_funcs[recorder.model_save_mode]()
 TedRecorder._model_save = model_save
     
 def model_save_reduce(recorder: TedRecorder):
-    monitor_value = recorder.epoch_report.at[-1, recorder.model_save_monitor]
-    if monitor_value > recorder.old_monitor_value:
+    monitor_value = recorder.epoch_report.at[len(recorder.epoch_report)-1, recorder.model_save_monitor]
+    if monitor_value > (recorder.old_monitor_value or 10e6):
         return None
     recorder.old_monitor_value = monitor_value
     name = f'{recorder.model_save_name}-best-{recorder.model_save_monitor}'
@@ -51,15 +53,18 @@ def model_save_reduce(recorder: TedRecorder):
 TedRecorder.__model_save_reduce = model_save_reduce
         
 def model_save_improve(recorder: TedRecorder):
-    monitor_value = recorder.epoch_report.at[-1, recorder.model_save_monitor]
-    if monitor_value < recorder.old_monitor_value:
+    monitor_value = recorder.epoch_report.at[len(recorder.epoch_report)-1, recorder.model_save_monitor]
+    if monitor_value < (recorder.old_monitor_value or -10e6):
         return None
     recorder.old_monitor_value = monitor_value
     name = f'{recorder.model_save_name}-best-{recorder.model_save_monitor}'
     recorder.learner.save(name)
 TedRecorder.__model_save_improve = model_save_reduce
 
-def __model_save_step(recorder):
+def model_save_step(recorder):
     pass
-def __model_save_epoch(recorder):
+TedRecorder.__model_save_step = model_save_step
+
+def model_save_epoch(recorder):
     pass
+TedRecorder.__model_save_epoch = model_save_epoch

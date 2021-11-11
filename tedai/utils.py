@@ -137,7 +137,7 @@ def report_binary_thresholded_metrics(y_pred, y_true, thresh_step=0.1, lite=True
         report = pd.concat([report, row], ignore_index=False)
         report.index.name = 'threshold'
     if lite:
-        report = report[['precision', 'recall', 'specificity', 
+        report = report[['precision', 'recall', 'specificity', 'auc', 
                         'f1', 'TP', 'FP', 'TN', 'FN']]
     return report
 
