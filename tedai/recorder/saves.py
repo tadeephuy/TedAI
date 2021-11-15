@@ -59,7 +59,7 @@ def model_save_improve(recorder: TedRecorder):
     recorder.old_monitor_value = monitor_value
     name = f'{recorder.model_save_name}-best-{recorder.model_save_monitor}'
     recorder.learner.save(name)
-TedRecorder.__model_save_improve = model_save_reduce
+TedRecorder.__model_save_improve = model_save_improve
 
 def model_save_step(recorder):
     pass
