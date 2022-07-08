@@ -119,6 +119,7 @@ class TedLearner:
         self.save(name=name)
 
     def save(self, name='model', log=True):
+        os.makedirs(self.model_path, exist_ok=True)
         model_path = os.path.join(self.model_path, f'{name}.pth')
         torch.save({'model_state_dict': self.model.state_dict(),
                     'optimizer_state_dict': self.opt.state_dict()}, model_path)
