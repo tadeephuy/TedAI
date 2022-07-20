@@ -126,7 +126,7 @@ class TedLearner:
         if log:
             print(f'Model is saved at {model_path}')
         
-    def load(self, name='model', strict=True):
+    def load(self, name='model'):
         model_path = os.path.join(self.model_path, f'{name}.pth')
         state_dict = torch.load(model_path, map_location=self.device)
         model_state_dict = state_dict.get('model_state_dict', state_dict.get('state_dict'))

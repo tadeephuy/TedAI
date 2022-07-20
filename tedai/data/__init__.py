@@ -3,7 +3,7 @@ from ..utils import *
 
 class TedData:
     """
-    Fastai databunch immitation
+    Databunch for train/validation
     """
     def __init__(self, data_path, ds_class, transforms, img_size=224, bs=32, n_workers=8, fix_dis=False):
         """
@@ -85,6 +85,25 @@ class TedData:
             idx = np.random.randint(len(ds), size=n_col)
             xb = torch.stack([ds[i][0] for i in idx], dim=0)
             make_imgs(xb, n_row=n_col, plot=True)
+
+class InferenceData(TedData):
+    """
+    Databunch for inference, more suitable for TedInference
+    """
+    def __init__(self, data_path, ds_class, transforms, img_size=224, bs=32, n_workers=8):
+        self.data_path = data_path
+        self.img_size, self.bs, self.n_workers = img_size, bs, n_workers
+        self._initialize_data()
+    
+    def _initialize_data(self):
+        torch.cuda.empty_cache()
+        gc.collect()
+
+        self.infer_ds = self._create_ds(self.ds_class, transforms=self.transforms, img_size=self.img_size)
+        self.infer_dl = self._create_dl(self.infer_ds, shuffle=False, drop_last=False)
+
+        self.train_ds = self.infer_ds # alias for show_batch
+
 
 class TedImageDataset(Dataset):
     def __init__(self, data_path, df, transforms=None, img_size=224, label_cols_list=None):
