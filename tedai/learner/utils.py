@@ -45,11 +45,11 @@ NORMS = [
     nn.InstanceNorm1d, nn.InstanceNorm2d, nn.InstanceNorm3d,
     nn.LayerNorm
 ]
-is_norm = lambda x: any([isinstance(x, c) for c in norms])
 
 def freeze_base(learn: TedLearner, freeze_bn=False, norms=NORMS):
     learn.unfreeze()
     print(f'freeze base {"but not Norms" if not freeze_bn else ""}')
+    is_norm = lambda x: any([isinstance(x, c) for c in norms])
     for layer in learn.model.base.modules():
         if is_norm(layer) and not freeze_bn:
             for p in layer.parameters(): p.requires_grad = True
@@ -57,8 +57,9 @@ def freeze_base(learn: TedLearner, freeze_bn=False, norms=NORMS):
             for p in layer.parameters(): p.requires_grad = False
 TedLearner.freeze_base = freeze_base
 
-def freeze_head(learn: TedLearner):
+def freeze_head(learn: TedLearner, norms=NORMS):
     learn.unfreeze()
+    is_norm = lambda x: any([isinstance(x, c) for c in norms])
     for layer in learn.model.head.modules():
         if is_norm(layer):
             for p in layer.parameters(): p.requires_grad = True
