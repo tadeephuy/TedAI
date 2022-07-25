@@ -1,6 +1,7 @@
 from ..imports import *
 from ..utils import *
 from . import TedLearner
+from .inference import TedInference
 
 def get_preds(learn: TedLearner, mode='test', with_losses=False, activ=None):
     """
@@ -39,6 +40,7 @@ def get_preds(learn: TedLearner, mode='test', with_losses=False, activ=None):
         return [preds, targets, losses]
     return preds
 TedLearner.get_preds = get_preds
+TedInference.get_preds = get_preds
 
 NORMS = [
     nn.BatchNorm1d, nn.BatchNorm2d, nn.BatchNorm3d, 

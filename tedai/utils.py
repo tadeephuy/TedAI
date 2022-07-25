@@ -207,3 +207,45 @@ def resize_aspect_ratio(img, size, interp=cv2.INTER_AREA):
         new_h = size
         new_w = w*new_h//h
     return cv2.resize(img, (new_w, new_h), interpolation=interp)     
+
+def min_edge_crop(img, position="center"):
+    """
+    crop image base on min size
+    :param img: image to be cropped
+    :param position: where to crop the image
+    :return: cropped image
+    """
+    assert position in ['center', 'left', 'right'], "position must either be: left, center or right"
+
+    h, w = img.shape[:2]
+
+    if h == w:
+        return img
+
+    min_edge = min(h, w)
+    if h > min_edge:
+        if position == "left":
+            img = img[:min_edge]
+        elif position == "center":
+            d = (h - min_edge) // 2
+            img = img[d:-d] if d != 0 else img
+
+            if h % 2 != 0:
+                img = img[1:]
+        else:
+            img = img[-min_edge:]
+
+    if w > min_edge:
+        if position == "left":
+            img = img[:, :min_edge]
+        elif position == "center":
+            d = (w - min_edge) // 2
+            img = img[:, d:-d] if d != 0 else img
+
+            if w % 2 != 0:
+                img = img[:, 1:]
+        else:
+            img = img[:, -min_edge:]
+
+    assert img.shape[0] == img.shape[1], f"height and width must be the same, currently {img.shape[:2]}"
+    return img
