@@ -91,7 +91,7 @@ class InferenceData(TedData):
     Databunch for inference, more suitable for TedInference
     """
     def __init__(self, data_path, ds_class, transforms, img_size=224, bs=32, n_workers=8):
-        self.data_path = data_path
+        self.data_path, self.ds_class, self.transforms = data_path, ds_class, transforms
         self.img_size, self.bs, self.n_workers = img_size, bs, n_workers
         self._initialize_data()
     
@@ -102,7 +102,7 @@ class InferenceData(TedData):
         self.infer_ds = self._create_ds(self.ds_class, transforms=self.transforms, img_size=self.img_size)
         self.infer_dl = self._create_dl(self.infer_ds, shuffle=False, drop_last=False)
 
-        self.train_ds = self.infer_ds # alias for show_batch
+        self.train_ds = self.val_ds = self.test_ds = self.infer_ds # alias for show_batch
 
 
 class TedImageDataset(Dataset):

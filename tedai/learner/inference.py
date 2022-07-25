@@ -7,7 +7,7 @@ class TedInference:
     unnecessary stuffs when using Learner class.
     """
     def __init__(self, model, data=None, device=None, loss_func=None, model_path=''):
-        self.data, self.model, self.loss_func, self.model_path = data, model, loss_func, model_path
+        self.data, self.model, self.loss_func, self.device, self.model_path = data, model, loss_func, device, model_path
         if self.device is None:
             self.device = torch.device('cuda:0') if torch.cuda.is_available() else torch.device('cpu')
 
