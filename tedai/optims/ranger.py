@@ -1,4 +1,3 @@
-  
 #Ranger deep learning optimizer - RAdam + Lookahead combined.
 #https://github.com/lessw2020/Ranger-Deep-Learning-Optimizer
 

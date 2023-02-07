@@ -90,6 +90,12 @@ def make_imgs(xb, n_row=8, denorm=Denormalize(), device=torch.device('cpu'), plo
     plt.close(); plt.figure(figsize=(30,30)); plt.imshow(grid_img); plt.show()
 
 def create_dataset(dataset_class, df, **kwargs):
+    """
+    A convenient function with docstring for ease of use
+    Args:
+        - dataset_class: Dataset class for the dataset
+        - df: the according DataFrame
+    """
     return partial(dataset_class, df=df, **kwargs)
 
 def create_transforms(zoom_in_scale=1.3, max_rotate=12, vert_flip=False, normalize=True, p_flip=0.4, p_affine=0.45, p_color=0.2):
@@ -120,11 +126,11 @@ def report_distribution(df, label_cols_list, sort=True):
     distribution_report.columns = [f'{c:0.2f}' for c in list(distribution_report.columns)]
     if sort:
         distribution_report = distribution_report.reindex(sorted(distribution_report.columns), axis=1)
-    return distribution_report.applymap(int)
+    return distribution_report.applymap(int).loc[label_cols_list]
 
 def report_binary_thresholded_metrics(y_pred, y_true, thresh_step=0.1, lite=True):
     report = pd.DataFrame(columns=['precision', 'recall', 'specificity', 
-                                   'accuracy', 'auc', 'f2', 'f1', 'TP', 'FP', 'TN', 'FN'])
+                                   'accuracy', 'auc', 'f2', 'f1', 's_score', 'TP', 'FP', 'TN', 'FN'])
     preds = y_pred
     
     auc = sk_metrics.roc_auc_score(y_true, y_pred)
@@ -132,13 +138,14 @@ def report_binary_thresholded_metrics(y_pred, y_true, thresh_step=0.1, lite=True
         y_pred = (preds >= thresh).astype(np.uint8).squeeze()
         metrics = binary_metrics(y_pred, y_true, log=False)
         metrics['auc'] = auc
+        metrics['s_score'] = 2/(1/metrics['recall'] + 1/metrics['specificity'])
         counts = classification_counts(y_pred, y_true, log=False)
         row = pd.DataFrame.from_dict({f'{thresh:0.2f}': dict(metrics, **counts)}, orient='index')
         report = pd.concat([report, row], ignore_index=False)
         report.index.name = 'threshold'
     if lite:
         report = report[['precision', 'recall', 'specificity', 'auc', 
-                        'f1', 'TP', 'FP', 'TN', 'FN']]
+                        'f1', 's_score', 'TP', 'FP', 'TN', 'FN']]
     return report
 
 def report_wrong_samples(y_pred, y_true, df, loss=None, top_k=None, full=False, thresh=None):
@@ -190,62 +197,25 @@ def count_params(model, trainable=False):
     if trainable: return sum(p.numel() for p in model.parameters() if p.requires_grad)
     return sum(p.numel() for p in model.parameters())
 
-def resize_aspect_ratio(img, size, interp=cv2.INTER_AREA):
+
+def np_sigmoid(x): return 1/(1+np.exp(-x))
+
+import multiprocessing as mp
+
+def parallel_iterate(arr, iter_func, workers=8, use_index=False, **kwargs):
     """
-    resize min edge to target size, keeping aspect ratio
+    parallel iterate array
+    :param arr: array to be iterated
+    :param iter_func: function to be called for each data, signature (idx, arg) or arg
+    :param workers: number of worker to run
+    :param chunk_size: chunk size to commit as a task
+    :param use_index: whether to add index to each call of iter func
+    :return list of result if not all is None
     """
-    if len(img.shape) == 2:
-        h,w = img.shape
-    elif len(img.shape) == 3:
-        h,w,_ = img.shape
-    else:
-        return None
-    if h > w:
-        new_w = size
-        new_h = h*new_w//w
-    else:
-        new_h = size
-        new_w = w*new_h//h
-    return cv2.resize(img, (new_w, new_h), interpolation=interp)     
-
-def min_edge_crop(img, position="center"):
-    """
-    crop image base on min size
-    :param img: image to be cropped
-    :param position: where to crop the image
-    :return: cropped image
-    """
-    assert position in ['center', 'left', 'right'], "position must either be: left, center or right"
-
-    h, w = img.shape[:2]
-
-    if h == w:
-        return img
-
-    min_edge = min(h, w)
-    if h > min_edge:
-        if position == "left":
-            img = img[:min_edge]
-        elif position == "center":
-            d = (h - min_edge) // 2
-            img = img[d:-d] if d != 0 else img
-
-            if h % 2 != 0:
-                img = img[1:]
+    with mp.Pool(workers) as p:
+        if isinstance(arr, zip):
+            jobs = [p.apply_async(iter_func, args=(i,) + arg if use_index else arg, kwds=kwargs) for i, arg in enumerate(arr)]
         else:
-            img = img[-min_edge:]
-
-    if w > min_edge:
-        if position == "left":
-            img = img[:, :min_edge]
-        elif position == "center":
-            d = (w - min_edge) // 2
-            img = img[:, d:-d] if d != 0 else img
-
-            if w % 2 != 0:
-                img = img[:, 1:]
-        else:
-            img = img[:, -min_edge:]
-
-    assert img.shape[0] == img.shape[1], f"height and width must be the same, currently {img.shape[:2]}"
-    return img
+            jobs = [p.apply_async(iter_func, args=(i, arg) if use_index else (arg,), kwds=kwargs) for i, arg in enumerate(arr)]
+        results = [j.get() for j in progress_bar(jobs)]
+        return results

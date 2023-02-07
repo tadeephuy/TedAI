@@ -1,5 +1,6 @@
 from ..imports import *
 from ..utils import *
+from ..augs import *
 
 class TedInference:
     """
