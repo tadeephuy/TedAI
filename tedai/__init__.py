@@ -1,5 +1,4 @@
 from .imports import *
-# from .core import *
 from .utils import *
 from .losses import *
 from .metrics import *
@@ -8,3 +7,6 @@ from .model import *
 from .recorder import *
 from .learner import *
 from .model import archs
+from .optims import *
+from .augs import *
+from .callbacks import *

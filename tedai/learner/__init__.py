@@ -54,7 +54,7 @@ class TedLearner:
             for xb, yb in progress_bar(dl, parent=self.master_bar):
                 xb, yb = xb.to(self.device), yb.to(self.device)
                 out = self.model(xb)
-                loss = self.loss_func(out, yb).to(self.device)
+                loss = self.loss_func(out, yb)#.to(self.device)
                 preds.append(out.cpu().numpy()), targets.append(yb.cpu().numpy())
                 val_loss_value.update(val=loss.item())
         self.model.train()
@@ -84,7 +84,7 @@ class TedLearner:
                 ## on batch begin
                 xb, yb, = xb.to(self.device), yb.to(self.device)
                 ## on loss begin
-                loss = self.loss_func(self.model(xb), yb).to(self.device)
+                loss = self.loss_func(self.model(xb), yb)#.to(self.device)
                 ## on backward begin
                 loss.backward()
                 ## on backward end
@@ -134,6 +134,15 @@ class TedLearner:
         self.model.load_state_dict(model_state_dict)
         self.opt.load_state_dict(optimizer_state_dict)
         print(f'Model is loaded from {model_path}')
+    
+    def set_loss_func(self, loss_func):
+        self.loss_func = loss_func.to(self.device)
+    
+    def set_opt_func(self, opt_func):
+        self.opt_func = opt_func
+        self.opt = self.opt_func([{'params': self.model.base.parameters(), 'lr': 1e-4},
+                                 {'params': self.model.head.parameters(), 'lr': 1e-3}])
+        
     
     def _set_lr(self, lr):
         lr_base, lr_head = lr

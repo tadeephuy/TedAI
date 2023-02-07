@@ -28,6 +28,13 @@ class TedData:
         else: self.transforms = (transforms, None)
 
         self._initialize_data()
+    
+    def set_transforms(self, transforms, fix_dis=False):
+        self.fix_dis = fix_dis
+        if isinstance(transforms, tuple): 
+            self.transforms = transforms
+        else: self.transforms = (transforms, None)
+        self._initialize_data()
 
     def set_size(self, img_size, bs=None, n_workers=None):
         """
@@ -83,7 +90,10 @@ class TedData:
 
         for _ in range(n_row):
             idx = np.random.randint(len(ds), size=n_col)
-            xb = torch.stack([ds[i][0] for i in idx], dim=0)
+            if mode=='test':
+                xb = torch.stack([ds[i] for i in idx], dim=0)
+            else:
+                xb = torch.stack([ds[i][0] for i in idx], dim=0)
             make_imgs(xb, n_row=n_col, plot=True)
 
 class InferenceData(TedData):
@@ -93,6 +103,10 @@ class InferenceData(TedData):
     def __init__(self, data_path, ds_class, transforms, img_size=224, bs=32, n_workers=8):
         self.data_path, self.ds_class, self.transforms = data_path, ds_class, transforms
         self.img_size, self.bs, self.n_workers = img_size, bs, n_workers
+        self._initialize_data()
+    
+    def set_transforms(self, transforms, fix_dis=False):
+        self.transforms = transforms
         self._initialize_data()
     
     def _initialize_data(self):
@@ -118,6 +132,7 @@ class TedImageDataset(Dataset):
         
     def __getitem__(self, idx):
         img = self._imread(self.df.Images[idx])
+
         if self.label_cols_list is not None:
             label = self.labels[idx]
             return self.transforms(img), label.astype(float)
@@ -130,5 +145,7 @@ class TedImageDataset(Dataset):
 
     @staticmethod
     def default_transforms():
-        return lambda img_size: Compose([ToPILImage(), Resize(int(img_size*1.3)), CenterCrop((img_size, img_size)), ToTensor(), 
+        return lambda img_size: Compose([ToPILImage(), Resize(int(img_size*1.05)), CenterCrop((img_size, img_size)), ToTensor(), 
                                                Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])])
+
+from .tta import *

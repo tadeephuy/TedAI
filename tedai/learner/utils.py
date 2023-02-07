@@ -3,7 +3,7 @@ from ..utils import *
 from . import TedLearner
 from .inference import TedInference
 
-def get_preds(learn: TedLearner, mode='test', with_losses=False, activ=None):
+def get_preds(learn: TedLearner, dataloader=None, mode='test', with_losses=False, activ=None):
     """
     get all predictions of a given dataset by specifying mode `train`, `valid` or `test`
     with_losses:
@@ -12,12 +12,15 @@ def get_preds(learn: TedLearner, mode='test', with_losses=False, activ=None):
     """
     learn.model.eval()
     preds, targets, losses = [], [], []
-    ds = {
-        'train': learn.data.train_ds,
-        'valid': learn.data.val_ds,
-        'test': learn.data.test_ds or learn.data.val_ds
-    }.get(mode, learn.data.val_ds)
-    dl = learn.data._create_dl(dataset=ds, shuffle=False, bs=None if not with_losses else 1)
+    if dataloader is not None:
+        dl = dataloader
+    else:
+        ds = {
+            'train': learn.data.train_ds,
+            'valid': learn.data.val_ds,
+            'test': learn.data.test_ds or learn.data.val_ds
+        }.get(mode, learn.data.val_ds)
+        dl = learn.data._create_dl(dataset=ds, shuffle=False, bs=None if not with_losses else 1)
     with torch.no_grad():
         for batch in progress_bar(dl):
             if mode=='test': # no label
@@ -75,18 +78,21 @@ def unfreeze(learn: TedLearner):
 TedLearner.unfreeze = unfreeze
 
 def find_lr(learn: TedLearner, mode='fastai'):
+    import time
+    name = str(time.time())
+    learn.save(name)
     learn.opt = learn.opt_func([{'params': learn.model.base.parameters(), 'lr': 1e-6},
                                 {'params': learn.model.head.parameters(), 'lr': 1e-6}])
     if mode == 'fastai':
         lr_finder = LRFinder(learn.model, learn.opt, learn.loss_func, device='cuda')
         lr_finder.range_test(learn.data.train_dl, end_lr=10, num_iter=100)
         lr_finder.plot()
-        lr_finder.reset()
     if mode == 'leslie':
         lr_finder = LRFinder(learn.model, learn.opt, learn.loss_func, device='cuda')
         lr_finder.range_test(learn.data.train_dl, val_loader=learn.data.val_dl, end_lr=1, num_iter=100, step_mode='linear')
         lr_finder.plot(log_lr=False)
-        lr_finder.reset()
+    learn.load(name)
+    os.remove(os.path.join(learn.model_path, f'{name}.pth'))
 TedLearner.find_lr = find_lr
 
 def clip_grad(learn: TedLearner, clip):

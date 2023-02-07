@@ -8,6 +8,7 @@ class TedRecorder:
     def __init__(self, learner, metrics, log='log.html'):
         self.learner = learner
         self.log = log
+        os.makedirs(os.path.dirname(self.log), exist_ok=True)
         # intialize metrics
         if isinstance(metrics, list): self.metrics = {metric.__name__: [] for metric in metrics}
         elif metrics is not None: self.metrics = {metrics.__name__: []}
