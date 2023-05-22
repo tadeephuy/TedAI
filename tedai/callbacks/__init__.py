@@ -1,5 +1,6 @@
 from ..imports import *
 from ..utils import *
+from ..learner import TedLearner
 
 class CallbacksHandler:
     def __init__(self, learn, cbs=[]):
